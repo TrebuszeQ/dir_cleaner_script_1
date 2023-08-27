@@ -1,4 +1,5 @@
 import os
+import shutil
 
 
 def create_dir(destination):
@@ -10,49 +11,82 @@ def create_dir(destination):
         print("Directory couldn't been made, file exists.\n")
     except Exception as err:
         print("Directory couldn't been made.\n")
-        print(err)
-        print("\n")
+        raise err
     return True
 
 
-def scan_desktop():
-    win_desktop = "%UserProfile%\\Desktop\\"
-    lin_desktop = "~/Desktop"
-    print(lin_desktop)
-    if not is_linux():
+def ret_desktop_content(desktop):
+    home = is_linux()
+
+    if not home:
 
         try:
-            content = os.scandir(win_desktop)
+            content = os.scandir(desktop)
             print(content)
             return content
         except FileNotFoundError:
-            print(f"{win_desktop} doesn't exist.\n")
+            print(f"{desktop} doesn't exist.\n")
         except FileExistsError:
-            print(f"Cannot access {win_desktop}.\n")
-        except:
-            print("Unknown exception when accessing the desktop\n")
+            print(f"Cannot access {desktop}.\n")
+        except Exception("Unknown exception when accessing the desktop\n") as e:
+            raise e
 
-    elif is_linux():
+    elif type(home) == str:
         try:
-            content = os.scandir(lin_desktop)
-            print(content)
+            content = os.listdir(desktop)
             return content
         except FileNotFoundError:
-            print(f"{lin_desktop} doesn't exist.\n")
+            print(f"{desktop} doesn't exist.\n")
         except FileExistsError:
-            print(f"Cannot access {lin_desktop}.\n")
-        except:
+            print(f"Cannot access {desktop}.\n")
+        except Exception as e:
             print("Unknown exception when accessing the desktop\n")
+            raise e
     return False
 
 
-def is_linux():
-    try:
-        os.getenv("$PATH")
-        return True
-    except:
+def is_linux() -> str | bool:
+    home = os.getenv("HOME")
+    if type(home) == str:
+        return home
+    else:
         print("Windows operating system.\n")
         return False
+
+
+def ret_desktop_path():
+    home = is_linux()
+    win_desktop = "%UserProfile%\\Desktop\\"
+    lin_desktop = f"{home}/Desktop"
+
+    if not is_linux():
+        print("Windows OS.\n")
+        return win_desktop
+
+    elif type(is_linux()) == str:
+        return lin_desktop
+
+    else:
+        raise Exception("Unknown OS or unknown exception.\n")
+
+
+def list_dir_content(content):
+    for obj in content:
+        print(obj.name)
+    return True
+
+
+def cp_content(src, dest, content):
+    dest = dest + '/' + 'CleanedUp'
+    try:
+        for obj in content:
+            src = src + '/' + obj
+            shutil.copyfile(src,dest)
+            print(f"{obj} copied to {dest}.")
+    except Exception as e:
+        print("Unknown exception encountered.\n")
+        raise e
+    return False
 
 
 def main():
@@ -70,9 +104,14 @@ def main():
         return FileNotFoundError
     elif path_exist:
         create_dir(destination)
-    # List the files in the Desktop/ folder
-    scan_desktop()
-    # For each file in the Desktop/ folder move the file to the CleanedUp/ folder
+    # Return desktop path
+    desktop_path = ret_desktop_path()
+    # List the files in the desktop/ folder
+    content = ret_desktop_content(desktop_path)
+    for obj in content:
+        print(obj)
+    # For each file in the Desktop/ folder copy the file to the CleanedUp/ folder
+    cp_content(desktop_path,destination, content)
 
 
 main()
