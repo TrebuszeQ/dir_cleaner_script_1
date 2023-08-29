@@ -1,9 +1,11 @@
 import os
 import shutil
 
+# Creates CleanedUp folder and copies content of the Desktop to it. Hopefully this remains within SOLID principles.
 
+# create directory CleanedUp or drop an Exception.
 def create_dir(destination):
-    path = destination + "/CleanedUp"
+    path = os.path.join(destination, "CleanedUp")
     try:
         os.mkdir(path)
         print("File has been created.\n\n")
@@ -12,9 +14,31 @@ def create_dir(destination):
     except Exception as err:
         print("Directory couldn't been made.\n\n")
         raise err
+    return path
+
+
+# Check if desktop exists.
+def desktop_exists(desktop_path) -> bool:
+    if not os.path.exists(desktop_path):
+        return False
     return True
 
 
+#return path to desktop
+def ret_desktop_path():
+    user_path = os.path.expanduser("~")
+    desktop_p = os.path.join(user_path, "Desktop")
+    return desktop_p
+    
+
+# list directory (desktop) content
+def list_dir_content(dir_content):
+    for obj in dir_content:
+        print(obj)
+    return True
+
+
+# return content of desktop directory or drop an Exception.
 def ret_desktop_content(desktop, home):
     if not home:
 
@@ -42,50 +66,19 @@ def ret_desktop_content(desktop, home):
     return False
 
 
-def is_linux() -> str | bool:
-    home = os.getenv("HOME")
-    if type(home) == str:
-        return home
-    else:
-        return False
-
-def get_user_w() -> str | bool:
-    userprofile = os.getenv("USERPROFILE")
-    if type(userprofile) == str:
-        return userprofile
-    else:
-        print("Coudln't get %UserProfile%")
-        return False
+# Creates subfolders based on folders dictionary.
+def create_subdirs(folders): 
+    for dir in folders:
+        print(dir)
+        # here
+    return False
 
 
-def ret_desktop_path(home):
-    user_w = get_user_w()
-    win_desktop = f"{user_w}\\Desktop\\"
-    lin_desktop = f"{home}/Desktop"
-
-    if not home:
-        return win_desktop
-
-    elif type(home) == str:
-        return lin_desktop
-
-    else:
-        raise Exception("Unknown OS or unknown exception.\n\n")
-
-
-def list_dir_content(content):
-    for obj in content:
-        print(obj)
-    return True
-
-
-def cp_content(src, dest, content, system):
-    sign = ''
-    if system:
-        sign = '/'
+# Copy content of desktop to CleanedUp
+def cp_content(src, dest, dir_content):
     try:
-        for obj in content:
-            src = src + sign + obj
+        for obj in dir_content:
+            src = os.path.join(src, obj)
             shutil.copyfile(src, dest)
             print(f"{obj} copied to {dest}.\n")
     except Exception as e:
@@ -93,30 +86,37 @@ def cp_content(src, dest, content, system):
         raise e
     
 
-
 def main():
     # Make the folder CleanedUp/
+    cleanedup = ""
     destination = input("Where do you want to create CleanedUp folder.\n")
-    access_modes = [
-        os.F_OK,
-        os.R_OK,
-        os.W_OK,
-        os.X_OK
-    ]
-    system: str | bool = is_linux()
-    path_exist: bool = os.access(destination, access_modes[0])
+
+    folders = {
+        "Images": [".jpeg", ".jpg", ".png", ".gif"],
+        "Documents": [".doc", ".docx", ".pdf", ".txt", ".xlsx"],
+        "Archives": [".zip", ".rar", ".tar", ".7z", ".tar.gz"],
+        "Shortcuts": [".lnk"]
+    }
+
+    # Return desktop path
+    desktop_path = ret_desktop_path()
+    # Check if desktop exists
+    path_exist: bool = desktop_exists(desktop_path)
     if not path_exist:
         print("Path doesn't exist.\n")
-        return FileNotFoundError
+        raise Exception(FileNotFoundError)
     elif path_exist:
-        create_dir(destination)
-    # Return desktop path
-    desktop_path = ret_desktop_path(system)
+        cleanedup = create_dir(destination)
+    
+    
     # List the files in the desktop/ folder
-    content = ret_desktop_content(desktop_path, system)
+    content = ret_desktop_content(desktop_path)
     list_dir_content(content)
+    
+    # Creates subfolders based on folders dictionary.
+    create_subdirs(folders)
     # For each file in the Desktop/ folder copy the file to the CleanedUp/ folder
-    cp_content(desktop_path, destination, content, system)
+    cp_content(desktop_path, destination, content)
 
 
 main()
