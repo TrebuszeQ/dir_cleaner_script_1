@@ -3,17 +3,19 @@ import shutil
 
 # Creates CleanedUp folder and copies content of the Desktop to it. Hopefully this remains within SOLID principles.
 
+
 # create directory CleanedUp or drop an Exception.
-def create_dir(destination):
-    path = os.path.join(destination, "CleanedUp")
+def create_dir(destination, dir_name):
+    path = os.path.join(destination, dir_name)
     try:
         os.mkdir(path)
-        print("File has been created.\n\n")
+        print(f"Directory {dir_name} has been created.")
     except FileExistsError:
-        print("Directory couldn't been made, file exists.\n\n")
-    except Exception as err:
-        print("Directory couldn't been made.\n\n")
-        raise err
+        print(f"Directory {dir_name} already exists.")
+    except Exception as e:
+        print(f"Directory {dir_name} couldn't been made.")
+        raise e
+    print()
     return path
 
 
@@ -24,7 +26,7 @@ def desktop_exists(desktop_path) -> bool:
     return True
 
 
-#return path to desktop
+# return path to desktop
 def ret_desktop_path():
     user_path = os.path.expanduser("~")
     desktop_p = os.path.join(user_path, "Desktop")
@@ -33,63 +35,59 @@ def ret_desktop_path():
 
 # list directory (desktop) content
 def list_dir_content(dir_content):
+    print("Content of the desktop:\n")
     for obj in dir_content:
         print(obj)
     return True
 
 
 # return content of desktop directory or drop an Exception.
-def ret_desktop_content(desktop, home):
-    if not home:
-
-        try:
-            content = os.listdir(desktop)
-            return content
-        except FileNotFoundError:
-            print(f"{desktop} doesn't exist.\n\n")
-        except FileExistsError:
-            print(f"Cannot access {desktop}.\n\n")
-        except Exception("Unknown exception when accessing the desktop\n\n") as e:
-            raise e
-
-    elif type(home) == str:
-        try:
-            content = os.listdir(desktop)
-            return content
-        except FileNotFoundError:
-            print(f"{desktop} doesn't exist.\n\n")
-        except FileExistsError:
-            print(f"Cannot access {desktop}.\n\n")
-        except Exception as e:
-            print("Unknown exception when accessing the desktop\n\n")
-            raise e
+def ret_desktop_content(desktop):
+    try:
+        content = os.listdir(desktop)
+        return content
+    except FileNotFoundError:
+        print(f"{desktop} doesn't exist.\n")
+    except FileExistsError:
+        print(f"Cannot access {desktop}.\n")
+    except Exception("Unknown exception when accessing the desktop\n") as e:
+        raise e
     return False
 
 
 # Creates subfolders based on folders dictionary.
-def create_subdirs(folders): 
-    for dir in folders:
-        print(dir)
+def create_subdirs(folders, dst):
+    for obj in folders:
+        path = create_dir(dst, obj)
+        if type(path) != str:
+            return False
         # here
-    return False
+    return True
 
 
 # Copy content of desktop to CleanedUp
 def cp_content(src, dest, dir_content):
+    tmp = src
     try:
         for obj in dir_content:
+            src = tmp
             src = os.path.join(src, obj)
-            shutil.copyfile(src, dest)
-            print(f"{obj} copied to {dest}.\n")
+            shutil.copy(src, dest)
+            print(f"{obj} copied to {dest}.")
     except Exception as e:
-        print("Unknown exception encountered.\n\n")
+        print("Copied failed.\n")
         raise e
+    print("Copied successfully.\n")
     
 
 def main():
     # Make the folder CleanedUp/
-    cleanedup = ""
+    term_msg = "Program is terminating"
     destination = input("Where do you want to create CleanedUp folder.\n")
+    cleanedup = create_dir(destination, "CleanedUp")
+    if type(cleanedup) != str:
+        print(term_msg)
+        return False
 
     folders = {
         "Images": [".jpeg", ".jpg", ".png", ".gif"],
@@ -105,18 +103,19 @@ def main():
     if not path_exist:
         print("Path doesn't exist.\n")
         raise Exception(FileNotFoundError)
-    elif path_exist:
-        cleanedup = create_dir(destination)
-    
-    
-    # List the files in the desktop/ folder
+
+    # Return desktop content
     content = ret_desktop_content(desktop_path)
+    # List the files in the desktop/ folder
     list_dir_content(content)
     
     # Creates subfolders based on folders dictionary.
-    create_subdirs(folders)
+    if not create_subdirs(folders, cleanedup):
+        print(term_msg)
+        return False
+
     # For each file in the Desktop/ folder copy the file to the CleanedUp/ folder
-    cp_content(desktop_path, destination, content)
+    cp_content(desktop_path, cleanedup, content)
 
 
 main()
