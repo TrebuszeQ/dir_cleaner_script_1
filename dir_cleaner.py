@@ -1,5 +1,6 @@
 import os
 import shutil
+import pathlib
 
 # Creates CleanedUp folder and copies content of the Desktop to it. Hopefully this remains within SOLID principles.
 
@@ -42,15 +43,15 @@ def list_dir_content(dir_content):
 
 
 # return content of desktop directory or drop an Exception.
-def ret_desktop_content(desktop):
+def ret_dir_content(dire):
     try:
-        content = os.listdir(desktop)
+        content = os.listdir(dire)
         return content
     except FileNotFoundError:
-        print(f"{desktop} doesn't exist.\n")
+        print(f"{dire} doesn't exist.\n")
     except FileExistsError:
-        print(f"Cannot access {desktop}.\n")
-    except Exception("Unknown exception when accessing the desktop\n") as e:
+        print(f"Cannot access {dire}.\n")
+    except Exception(f"Unknown exception when accessing the {dire}.\n") as e:
         raise e
     return False
 
@@ -65,20 +66,40 @@ def create_subdirs(folders, dst):
     return True
 
 
-# Copy content of desktop to CleanedUp
-def cp_content(src, dest, dir_content):
+# Copy content of desktop to Destination folder by file extension.
+def cp_content(src, folders, cleanedup, dir_content):
     tmp = src
-    try:
-        for obj in dir_content:
-            src = tmp
-            src = os.path.join(src, obj)
+    for obj in dir_content:
+        ext = check_ext(obj)
+        src = tmp
+        src = os.path.join(src, obj)
+        dest = ret_dest(ext, folders)
+        dest = os.path.join(cleanedup, dest)
+        try:
             shutil.copy(src, dest)
             print(f"{obj} copied to {dest}.")
-    except Exception as e:
-        print("Copied failed.\n")
-        raise e
+        except Exception as e:
+            print("Copied failed.\n")
+            raise e
+
     print("Copied successfully.\n")
     
+
+def check_ext(file):
+    try:
+        return pathlib.Path(file).suffix
+    except Exception as e:
+        raise e
+
+
+# returns destination by file extension
+def ret_dest(ext, folders):
+    for dirname in folders:
+        for exts in folders[dirname]:
+            if exts == ext:
+                return dirname
+    return "Other"
+
 
 def main():
     # Make the folder CleanedUp/
@@ -93,7 +114,8 @@ def main():
         "Images": [".jpeg", ".jpg", ".png", ".gif"],
         "Documents": [".doc", ".docx", ".pdf", ".txt", ".xlsx"],
         "Archives": [".zip", ".rar", ".tar", ".7z", ".tar.gz"],
-        "Shortcuts": [".lnk"]
+        "Shortcuts": [".lnk", ".desktop"],
+        "Other": [],
     }
 
     # Return desktop path
@@ -105,7 +127,7 @@ def main():
         raise Exception(FileNotFoundError)
 
     # Return desktop content
-    content = ret_desktop_content(desktop_path)
+    content = ret_dir_content(desktop_path)
     # List the files in the desktop/ folder
     list_dir_content(content)
     
@@ -115,7 +137,9 @@ def main():
         return False
 
     # For each file in the Desktop/ folder copy the file to the CleanedUp/ folder
-    cp_content(desktop_path, cleanedup, content)
+    cp_content(desktop_path, folders, cleanedup, content)
+
+
 
 
 main()
