@@ -5,6 +5,16 @@ import pathlib
 # Creates CleanedUp folder and copies content of the Desktop to it. Hopefully this remains within SOLID principles.
 
 
+# Ask user about action that will be performed.
+def check_action():
+    while True:
+        decision = input("Do you want to copy or move files?\n")
+        if decision == "move":
+            return True
+        elif decision == "copy":
+            return False
+
+
 # create directory CleanedUp or drop an Exception.
 def create_dir(destination, dir_name):
     path = os.path.join(destination, dir_name)
@@ -21,17 +31,17 @@ def create_dir(destination, dir_name):
 
 
 # Check if desktop exists.
-def desktop_exists(desktop_path) -> bool:
-    if not os.path.exists(desktop_path):
+def path_exists(dir_path) -> bool:
+    if not os.path.exists(dir_path):
         return False
     return True
 
 
 # return path to desktop
-def ret_desktop_path():
-    user_path = os.path.expanduser("~")
-    desktop_p = os.path.join(user_path, "Desktop")
-    return desktop_p
+# def ret_desktop_path():
+#     user_path = os.path.expanduser("~")
+#     desktop_p = os.path.join(user_path, "Desktop")
+#     return desktop_p
     
 
 # list directory (desktop) content
@@ -66,8 +76,8 @@ def create_subdirs(folders, dst):
     return True
 
 
-# Copy content of desktop to Destination folder by file extension.
-def cp_content(src, folders, cleanedup, dir_content):
+# Copy/moves content of desktop to destination folder by file extension.
+def perform_action(action, src, folders, cleanedup, dir_content):
     tmp = src
     for obj in dir_content:
         ext = check_ext(obj)
@@ -75,16 +85,25 @@ def cp_content(src, folders, cleanedup, dir_content):
         src = os.path.join(src, obj)
         dest = ret_dest(ext, folders)
         dest = os.path.join(cleanedup, dest)
-        try:
-            shutil.copy(src, dest)
-            print(f"{obj} copied to {dest}.")
-        except Exception as e:
-            print("Copied failed.\n")
-            raise e
-
-    print("Copied successfully.\n")
+        if os.path.isfile(src) and not action:
+            try:
+                shutil.copy(src, dest)
+                print(f"{obj} copied to {dest}.")
+            except Exception as e:
+                print("Copied failed.")
+                raise e
+            print("Copied successfully.")
+        elif os.path.isfile(src) and action:
+            try:
+                shutil.move(src, dest)
+                print(f"{obj} moved to {dest}.")
+            except Exception as e:
+                print("Moving failed.")
+                raise e
+            print("Moved successfully.")
     
 
+# returns file extension
 def check_ext(file):
     try:
         return pathlib.Path(file).suffix
@@ -104,30 +123,34 @@ def ret_dest(ext, folders):
 def main():
     # Make the folder CleanedUp/
     term_msg = "Program is terminating"
-    destination = input("Where do you want to create CleanedUp folder.\n")
-    cleanedup = create_dir(destination, "CleanedUp")
+    dst = input("Where do you want to create CleanedUp folder.\n")
+    src = input("Where do you want to clean up?\n")
+    decision = check_action()
+
+    cleanedup = create_dir(dst, "CleanedUp")
     if type(cleanedup) != str:
         print(term_msg)
         return False
 
     folders = {
         "Images": [".jpeg", ".jpg", ".png", ".gif"],
-        "Documents": [".doc", ".docx", ".pdf", ".txt", ".xlsx"],
+        "Documents": [".doc", ".docx", ".pdf", ".txt", ".xlsx", ".xls", ".epub", ".eml", ".odt", ".odt#", ".html"],
         "Archives": [".zip", ".rar", ".tar", ".7z", ".tar.gz"],
         "Shortcuts": [".lnk", ".desktop"],
+        "Scripts": [".sh", ".ps"],
         "Other": [],
     }
 
     # Return desktop path
-    desktop_path = ret_desktop_path()
+    # desktop_path = ret_desktop_path()
     # Check if desktop exists
-    path_exist: bool = desktop_exists(desktop_path)
+    path_exist: bool = path_exists(src)
     if not path_exist:
         print("Path doesn't exist.\n")
         raise Exception(FileNotFoundError)
 
     # Return desktop content
-    content = ret_dir_content(desktop_path)
+    content = ret_dir_content(src)
     # List the files in the desktop/ folder
     list_dir_content(content)
     
@@ -136,10 +159,8 @@ def main():
         print(term_msg)
         return False
 
-    # For each file in the Desktop/ folder copy the file to the CleanedUp/ folder
-    cp_content(desktop_path, folders, cleanedup, content)
-
-
+    # For each file in the source folder copy/move the file to the destination/CleanedUp folder
+    perform_action(decision, src, folders, cleanedup, content)
 
 
 main()
